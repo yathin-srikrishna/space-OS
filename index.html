@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SpaceOS</title>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }
+
+        body{
+            font-family:Arial;
+            overflow:hidden;
+            color:#f5f5f5;
+        }
+
+        #desktop{
+            height:100vh;
+            background:#1b263b;
+            position:relative;
+        }
+
+        /* Simple stars */
+
+        #stars{
+            position:absolute;
+            width:100%;
+            height:100%;
+            background-image:radial-gradient(white 1px,transparent 1px);
+            background-size:50px 50px;
+            opacity:.25;
+        }
+
+        /* Left side apps */
+
+        #apps{
+            position:absolute;
+            left:20px;
+            top:50%;
+            transform:translateY(-50%);
+            z-index:5;
+        }
+
+        .app{
+            width:70px;
+            text-align:center;
+            padding:8px;
+            margin:10px;
+            cursor:pointer;
+            border-radius:6px;
+        }
+
+        .app:hover{
+            background:rgba(255,255,255,.12);
+        }
+
+        .app span{
+            font-size:30px;
+        }
+
+        .app p{
+            font-size:12px;
+            margin-top:4px;
+        }
+
+        /* Windows */
+
+        .window{
+            width:500px;
+            min-height:350px;
+            position:absolute;
+            display:none;
+            background:#f4f6f8;
+            color:#222;
+            border:1px solid #8d99ae;
+            border-radius:8px;
+            overflow:hidden;
+            box-shadow:0 5px 15px rgba(0,0,0,.4);
+        }
+
+        .titlebar{
+            height:45px;
+            padding-left:15px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            background:#457b9d;
+            color:white;
+            cursor:move;
+        }
+
+        .buttons{
+            height:45px;
+            display:flex;
+        }
+
+        .buttons button{
+            width:40px;
+            border:0;
+            background:none;
+            color:white;
+            font-size:18px;
+            cursor:pointer;
+        }
+
+        .buttons button:hover{
+            background:rgba(255,255,255,.2);
+        }
+
+        .close:hover{
+            background:#d62828 !important;
+        }
+
+        .content{
+            padding:20px;
+        }
+
+        .btn{
+            padding:10px 15px;
+            margin-top:10px;
+            border:0;
+            border-radius:4px;
+            background:#457b9d;
+            color:white;
+            cursor:pointer;
+        }
+
+        .btn:hover{
+            background:#2f6690;
+        }
+
+        .box{
+            margin-top:15px;
+            padding:15px;
+            background:#e9ecef;
+            border:1px solid #ced4da;
+            border-radius:5px;
+        }
+
+        /* Notepad */
+
+        textarea{
+            width:100%;
+            height:230px;
+            padding:10px;
+            background:white;
+            color:#222;
+            border:1px solid #adb5bd;
+            border-radius:4px;
+            resize:none;
+            outline:none;
+        }
+
+        /* Music */
+
+        .music{
+            text-align:center;
+        }
+
+        .music h1{
+            font-size:70px;
+        }
+
+        audio{
+            width:90%;
+        }
+
+        /* Bottom bar */
+
+        #taskbar{
+            position:absolute;
+            bottom:0;
+            width:100%;
+            height:60px;
+            padding:10px 20px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            background:#212529;
+            border-top:1px solid #495057;
+            z-index:10;
+        }
+
+        #search{
+            width:200px;
+            padding:10px;
+            border-radius:20px;
+            border:1px solid #adb5bd;
+            background:white;
+            color:#222;
+            outline:none;
+        }
+
+        #searchButton{
+            padding:10px 15px;
+            border:0;
+            border-radius:20px;
+            background:#457b9d;
+            color:white;
+            cursor:pointer;
+        }
+
+        #searchButton:hover{
+            background:#2f6690;
+        }
+
+        #quick{
+            display:flex;
+            gap:10px;
+            font-size:22px;
+        }
+
+        .quick{
+            padding:5px;
+            cursor:pointer;
+            border-radius:5px;
+        }
+
+        .quick:hover{
+            background:rgba(255,255,255,.15);
+        }
+
+        #clock{
+            font-size:14px;
+        }
+
+        /* Maximize */
+
+        .max{
+            width:100% !important;
+            height:calc(100vh - 60px) !important;
+            top:0 !important;
+            left:0 !important;
+            border-radius:0;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div id="desktop">
+
+    <div id="stars"></div>
+
+    <!-- Left Apps -->
+
+    <div id="apps">
+
+        <div class="app" onclick="openApp('music')">
+            <span>🎵</span>
+            <p>Music</p>
+        </div>
+
+        <div class="app" onclick="openApp('notepad')">
+            <span>📝</span>
+            <p>Notes</p>
+        </div>
+
+        <div class="app" onclick="openApp('files')">
+            <span>📁</span>
+            <p>Files</p>
+        </div>
+
+        <div class="app" onclick="openApp('settings')">
+            <span>⚙️</span>
+            <p>Settings</p>
+        </div>
+
+    </div>
+
+
+    <!-- Music -->
+
+    <div class="window" id="music" style="top:100px;left:280px">
+
+        <div class="titlebar">
+
+            <b>🎵 Music</b>
+
+            <div class="buttons">
+                <button onclick="hideApp('music')">−</button>
+                <button onclick="maxApp('music')">□</button>
+                <button class="close" onclick="closeApp('music')">×</button>
+            </div>
+
+        </div>
+
+        <div class="content music">
+
+            <h2>Music Player</h2>
+
+            <br>
+
+            <h1>🎧</h1>
+
+            <p>Select music from your computer</p>
+
+            <br>
+
+            <input type="file" id="musicFile" accept="audio/*">
+
+            <br><br>
+
+            <audio id="player" controls></audio>
+
+        </div>
+
+    </div>
+
+
+    <!-- Notepad -->
+
+    <div class="window" id="notepad" style="top:120px;left:350px">
+
+        <div class="titlebar">
+
+            <b>📝 Notepad</b>
+
+            <div class="buttons">
+                <button onclick="hideApp('notepad')">−</button>
+                <button onclick="maxApp('notepad')">□</button>
+                <button class="close" onclick="closeApp('notepad')">×</button>
+            </div>
+
+        </div>
+
+        <div class="content">
+
+            <h2>My Notes</h2>
+
+            <br>
+
+            <textarea id="note" placeholder="Write here..."></textarea>
+
+            <button class="btn" onclick="saveNote()">
+                Save
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- Files -->
+
+    <div class="window" id="files" style="top:90px;left:420px">
+
+        <div class="titlebar">
+
+            <b>📁 Files</b>
+
+            <div class="buttons">
+                <button onclick="hideApp('files')">−</button>
+                <button onclick="maxApp('files')">□</button>
+                <button class="close" onclick="closeApp('files')">×</button>
+            </div>
+
+        </div>
+
+        <div class="content">
+
+            <h2>My Files</h2>
+
+            <br>
+
+            <p>Select files from your computer:</p>
+
+            <br>
+
+            <input type="file" id="fileInput" multiple>
+
+            <div id="fileList"></div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Settings -->
+
+    <div class="window" id="settings" style="top:140px;left:300px">
+
+        <div class="titlebar">
+
+            <b>⚙️ Settings</b>
+
+            <div class="buttons">
+                <button onclick="hideApp('settings')">−</button>
+                <button onclick="maxApp('settings')">□</button>
+                <button class="close" onclick="closeApp('settings')">×</button>
+            </div>
+
+        </div>
+
+        <div class="content">
+
+            <h2>Settings</h2>
+
+            <div class="box">
+
+                <h3>Change Theme</h3>
+
+                <button class="btn" onclick="theme('#1b263b')">
+                    Navy
+                </button>
+
+                <button class="btn" onclick="theme('#264653')">
+                    Ocean
+                </button>
+
+                <button class="btn" onclick="theme('#343a40')">
+                    Dark
+                </button>
+
+            </div>
+
+            <div class="box">
+
+                <h3>Extra Feature</h3>
+
+                <p>You can change the SpaceOS theme.</p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Bottom Taskbar -->
+
+    <div id="taskbar">
+
+        <div>
+
+            <input
+                id="search"
+                placeholder="Search apps..."
+                onkeydown="if(event.key=='Enter') searchApp()">
+
+            <button id="searchButton" onclick="searchApp()">
+                🔍
+            </button>
+
+        </div>
+
+        <!-- Quick Icons -->
+
+        <div id="quick">
+
+            <span class="quick" onclick="openApp('music')">🎵</span>
+
+            <span class="quick" onclick="openApp('notepad')">📝</span>
+
+            <span class="quick" onclick="openApp('files')">📁</span>
+
+            <span class="quick" onclick="openApp('settings')">⚙️</span>
+
+        </div>
+
+        <div id="clock"></div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+let z = 10;
+
+
+/* Open */
+
+function openApp(id){
+
+    let app = document.getElementById(id);
+
+    app.style.display = "block";
+
+    app.style.zIndex = z++;
+}
+
+
+/* Close */
+
+function closeApp(id){
+
+    document.getElementById(id).style.display = "none";
+}
+
+
+/* Minimize */
+
+function hideApp(id){
+
+    document.getElementById(id).style.display = "none";
+}
+
+
+/* Maximize */
+
+function maxApp(id){
+
+    document.getElementById(id).classList.toggle("max");
+}
+
+
+/* Music */
+
+musicFile.onchange = function(){
+
+    let file = this.files[0];
+
+    if(file){
+
+        player.src = URL.createObjectURL(file);
+
+    }
+
+};
+
+
+/* Files */
+
+fileInput.onchange = function(){
+
+    fileList.innerHTML = "";
+
+    for(let i=0;i<this.files.length;i++){
+
+        fileList.innerHTML +=
+            "<p>📄 " + this.files[i].name + "</p>";
+
+    }
+
+};
+
+
+/* Save Note */
+
+function saveNote(){
+
+    localStorage.setItem("note",note.value);
+
+    alert("Saved");
+
+}
+
+
+/* Load Note */
+
+let oldNote = localStorage.getItem("note");
+
+if(oldNote){
+
+    note.value = oldNote;
+
+}
+
+
+/* Theme */
+
+function theme(color){
+
+    desktop.style.background = color;
+
+}
+
+
+/* Search */
+
+function searchApp(){
+
+    let s = search.value.toLowerCase();
+
+    if(s.includes("music")){
+
+        openApp("music");
+
+    }
+
+    else if(s.includes("note")){
+
+        openApp("notepad");
+
+    }
+
+    else if(s.includes("file")){
+
+        openApp("files");
+
+    }
+
+    else if(s.includes("setting")){
+
+        openApp("settings");
+
+    }
+
+    else{
+
+        alert("App not found");
+
+    }
+
+}
+
+
+/* Clock */
+
+function time(){
+
+    let now = new Date();
+
+    clock.innerHTML =
+        now.toLocaleDateString() +
+        " " +
+        now.toLocaleTimeString();
+
+}
+
+setInterval(time,1000);
+
+time();
+
+
+/* Drag Windows */
+
+document.querySelectorAll(".window").forEach(function(win){
+
+    let bar = win.querySelector(".titlebar");
+
+    let move = false;
+
+    let x,y;
+
+
+    bar.onmousedown = function(e){
+
+        if(e.target.tagName == "BUTTON") return;
+
+        if(win.classList.contains("max")) return;
+
+        move = true;
+
+        x = e.clientX - win.offsetLeft;
+
+        y = e.clientY - win.offsetTop;
+
+        win.style.zIndex = z++;
+
+    };
+
+
+    document.onmousemove = function(e){
+
+        if(move){
+
+            win.style.left = e.clientX - x + "px";
+
+            win.style.top = e.clientY - y + "px";
+
+        }
+
+    };
+
+
+    document.onmouseup = function(){
+
+        move = false;
+
+    };
+
+});
+
+</script>
+
+</body>
+</html>
