@@ -1,6 +1,4 @@
-Here is a human-written, easy-to-understand breakdown of my journey building SpaceOS:
-
-1. Getting windows to drag smoothly across the screen with just plain JavaScript was surprisingly tricky at first.
+ 1. Getting windows to drag smoothly across the screen with just plain JavaScript was surprisingly tricky at first.
 2. I also had a hard time figuring out how to make clicked windows always pop up to the front instead of hiding behind others.
 3. My biggest mistake was tracking mouse movements globally, which originally made windows awkwardly "stick" to my mouse.
 4. I fixed that by adding simple on/off switches  and turning off dragging when a window is maximized.
