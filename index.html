@@ -1,684 +1,1247 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>SpaceOS</title>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetroOS - Personal Space</title>
     <style>
-
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
+        /* =========================================
+           RESET & RETRO WINDOWS 95 VARIABLES
+        ========================================= */
+        :root {
+            --ink: #000080;
+            --ink-deep: #000060;
+            --desk: #008080;
+            --window: #c0c0c0;
+            --window-top: linear-gradient(to right, #000080, #1084d0);
+            --window-soft: #d4d0c8;
+            --paper: #000000;
+            --paper-soft: #333333;
+            --paper-dim: #666666;
+            --clay: #c87852;
+            --clay-light: #d8916d;
+            --clay-dark: #9d593d;
+            --violet: #92869c;
+            --violet-soft: #746a7d;
+            --sage: #829171;
+            --sage-light: #9baa86;
+            --line: #808080;
+            --line-light: #ffffff;
+            --black-soft: #0c0c0b;
+            --orbit-green: #00ff00;
+            --orbit-cyan: #00a0ff;
+            --orbit-blue: #0000ff;
+            --orbit-sky: #000080;
+            --orbit-bright-cyan: #0080ff;
+            
+            --window-radius: 0px;
+            --button-radius: 0px;
+            --dock-radius: 6px;
         }
 
-        body{
-            font-family:Arial;
-            overflow:hidden;
-            color:#f5f5f5;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; height: 100%; overflow: hidden; }
+        body {
+            background: var(--desk);
+            color: var(--paper);
+            font-family: "MS Sans Serif", "Comic Sans MS", sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
-        #desktop{
-            height:100vh;
-            background:#1b263b;
-            position:relative;
+        /* =========================================
+           DESKTOP
+        ========================================= */
+        #desktop {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--desk);
+            background-image:
+                linear-gradient(rgba(230, 224, 207, 0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(230, 224, 207, 0.018) 1px, transparent 1px);
+            background-size: 36px 36px;
+        }
+        #desktop.grid-hidden::before { display: none; }
+        #desktop::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.18);
+            z-index: 1;
         }
 
-        /* Simple stars */
+        /* =========================================
+           TOP BAR (Menu Style)
+        ========================================= */
+        .top-bar {
+            position: absolute; top: 0; left: 0; width: 100%; height: 30px;
+            padding: 0 12px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: #c0c0c0;
+            border-bottom: 2px solid #fff;
+            z-index: 500;
+        }
+        .brand { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: #000; }
+        .brand-dot { display: none; }
+        .system-label { position: absolute; left: 50%; transform: translateX(-50%); color: #000; font-size: 10px; font-weight: bold; }
+        .clock { color: #000; font-family: inherit; font-size: 11px; }
 
-        #stars{
-            position:absolute;
-            width:100%;
-            height:100%;
-            background-image:radial-gradient(white 1px,transparent 1px);
-            background-size:50px 50px;
-            opacity:.25;
+        /* =========================================
+           WORKSPACE
+        ========================================= */
+        .workspace {
+            position: absolute; top: 30px; right: 0; bottom: 36px; left: 0;
+            overflow: hidden; z-index: 10;
         }
 
-        /* Left side apps */
-
-        #apps{
-            position:absolute;
-            left:20px;
-            top:50%;
-            transform:translateY(-50%);
-            z-index:5;
+        /* =========================================
+           WINDOW
+        ========================================= */
+        .window {
+            position: absolute;
+            top: 90px; left: 70px;
+            width: min(520px, calc(100vw - 30px));
+            min-height: 280px;
+            overflow: hidden;
+            background: var(--window);
+            border: 2px solid;
+            border-color: var(--line-light) var(--line) var(--line) var(--line-light);
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+            z-index: 10;
+            touch-action: none;
+            user-select: none;
+            transition: box-shadow 120ms ease;
         }
+        .window.active { border-color: #fff #000 #000 #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        .window.hidden { display: none; }
 
-        .app{
-            width:70px;
-            text-align:center;
-            padding:8px;
-            margin:10px;
-            cursor:pointer;
-            border-radius:6px;
+        /* =========================================
+           WINDOW HEADER
+        ========================================= */
+        .window-header {
+            height: 32px;
+            padding: 0 10px 0 12px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--window-top);
+            border-bottom: 2px solid #808080;
+            cursor: grab;
+            user-select: none;
         }
-
-        .app:hover{
-            background:rgba(255,255,255,.12);
+        .window-header:active { cursor: grabbing; }
+        .window-title {
+            display: flex; align-items: center; gap: 8px;
+            color: #fff; font-family: inherit; font-size: 12px; font-weight: bold; letter-spacing: 0.02em;
         }
+        .window-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: #00ffff; }
 
-        .app span{
-            font-size:30px;
+        /* =========================================
+           CLOSE BUTTON
+        ========================================= */
+        .window-close {
+            width: 22px; height: 22px;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid; border-color: #fff #808080 #808080 #fff;
+            background: #c0c0c0; color: #000;
+            font-family: Arial, sans-serif; font-size: 14px; line-height: 1; cursor: pointer;
         }
+        .window-close:hover { background: #d4d0c8; }
+        .window-close:active { border-color: #808080 #fff #fff #808080; }
+        .window-close:focus-visible { outline: 2px solid #000080; outline-offset: 2px; }
 
-        .app p{
-            font-size:12px;
-            margin-top:4px;
+        /* =========================================
+           WINDOW CONTENT
+        ========================================= */
+        .window-content { padding: 24px; user-select: text; }
+        .window-content h1 { margin-bottom: 18px; color: #000; font-size: clamp(28px, 4vw, 42px); font-weight: 600; line-height: 1.04; letter-spacing: -0.025em; }
+        .window-content h2 { margin-bottom: 16px; color: #000; font-size: 25px; font-weight: 600; }
+        .eyebrow { margin-bottom: 13px; color: #000; font-size: 9px; font-weight: bold; letter-spacing: 0.12em; }
+        .welcome-text { max-width: 420px; color: #333; font-size: 14px; line-height: 1.65; }
+
+        /* =========================================
+           STATUS DOT
+        ========================================= */
+        .status { margin-top: 24px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; background: #d4d0c8; border: 2px inset #808080; color: #000; font-family: inherit; font-size: 10px; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #00ff00; }
+
+        /* =========================================
+           TASKBAR (Formerly DOCK)
+        ========================================= */
+        .dock {
+            position: absolute;
+            left: 0; bottom: 0; width: 100%; height: 36px;
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            display: flex; align-items: center; padding: 2px 8px; gap: 4px;
+            z-index: 600;
         }
-
-        /* Windows */
-
-        .window{
-            width:500px;
-            min-height:350px;
-            position:absolute;
-            display:none;
-            background:#f4f6f8;
-            color:#222;
-            border:1px solid #8d99ae;
-            border-radius:8px;
-            overflow:hidden;
-            box-shadow:0 5px 15px rgba(0,0,0,.4);
+        #start-btn {
+            background: #c0c0c0; border: 2px solid; border-color: #fff #808080 #808080 #fff;
+            font-weight: bold; padding: 2px 12px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px;
         }
-
-        .titlebar{
-            height:45px;
-            padding-left:15px;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            background:#457b9d;
-            color:white;
-            cursor:move;
+        .dock-item {
+            background: #c0c0c0; border: 2px solid; border-color: #808080 #fff #fff #808080;
+            padding: 2px 10px; font-size: 11px; cursor: pointer; height: 28px; display: flex; align-items: center; 
         }
+        .dock-item.active { border-color: #fff #808080 #808080 #fff; background: #d4d0c8; }
+        .dock-item:hover { background: #e0e0e0; }
+        .dock-icon { display: none; }
+        .dock-label { font-family: inherit; font-size: 11px; color: #000; }
 
-        .buttons{
-            height:45px;
-            display:flex;
+        /* Tray Clock */
+        .tray { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+        .clock-tray { background: #c0c0c0; border: 2px inset #808080; padding: 2px 6px; font-size: 11px; }
+
+        /* =========================================
+           BUTTONS
+        ========================================= */
+        button { font-family: inherit; }
+        button:focus-visible { outline: 2px solid #000080; outline-offset: 2px; }
+
+        /* =========================================
+           ALL ORBITOS APP STYLES (Preserved)
+        ========================================= */
+
+        /* HOME APP */
+        .home-app { padding: 24px; }
+        .home-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 24px; }
+        .home-stat { min-height: 62px; display: flex; flex-direction: column; justify-content: space-between; padding: 10px; background: #d4d0c8; border: 2px inset #808080; }
+        .home-stat-label { color: #333; font-size: 8px; font-weight: bold; letter-spacing: 0.05em; }
+        .home-stat strong { color: #000; font-size: 11px; font-weight: 600; }
+        .home-launch { margin-top: 20px; }
+        .home-launch-label { margin-bottom: 8px; color: #333; font-size: 8px; font-weight: bold; }
+        .home-launch-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+        .home-launch-button { padding: 6px 10px; border: 2px outset #fff; background: #c0c0c0; color: #000; font-size: 11px; cursor: pointer; }
+        .home-launch-button:hover { background: #d4d0c8; }
+        .home-launch-button:active { border: 2px inset #fff; }
+
+        /* ABOUT APP */
+        .about-app { padding: 24px; }
+        .about-description { max-width: 420px; color: #333; font-size: 13px; line-height: 1.65; }
+        .about-section { margin-top: 22px; padding-top: 16px; border-top: 2px inset #808080; }
+        .about-section-title { margin-bottom: 10px; color: #000080; font-size: 8px; font-weight: bold; letter-spacing: 0.08em; }
+        .tech-list { display: flex; flex-wrap: wrap; gap: 6px; }
+        .tech-list span { padding: 6px 8px; background: #d4d0c8; border: 1px solid #808080; color: #000; font-size: 8px; }
+        .about-text { max-width: 430px; color: #333; font-size: 12px; line-height: 1.6; }
+        .about-footer { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 12px; border-top: 2px inset #808080; color: #333; font-size: 8px; }
+
+        /* NOTES APP */
+        .notes-app { width: 100%; padding: 0; display: flex; height: 400px; overflow: hidden; }
+        .notes-layout { display: flex; width: 100%; height: 100%; }
+        .notes-sidebar { width: 180px; border-right: 2px inset #808080; background: #d4d0c8; display: flex; flex-direction: column; overflow: hidden; }
+        .notes-sidebar-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #c0c0c0; border-bottom: 2px solid #fff; }
+        .notes-sidebar-header span { font-weight: bold; font-size: 11px; }
+        .notes-new-button { background: #c0c0c0; border: 2px outset #fff; width: 22px; height: 22px; cursor: pointer; font-size: 16px; line-height: 1; }
+        .notes-list { flex: 1; overflow-y: auto; padding: 4px; background: #fff; }
+        .note-list-item { display: block; width: 100%; padding: 8px 10px; text-align: left; background: transparent; border: 1px solid transparent; cursor: pointer; font-size: 11px; color: #000; font-family: inherit; }
+        .note-list-item:hover { background: #d4d0c8; }
+        .note-list-item.active { background: #000080; color: #fff; }
+        .notes-list-empty { padding: 16px 10px; color: #666; font-size: 11px; }
+        
+        .notes-editor-area { flex: 1; display: flex; flex-direction: column; background: #fff; overflow: hidden; }
+        .notes-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #999; font-size: 13px; }
+        .notes-editor-container { flex: 1; display: flex; flex-direction: column; padding: 12px; }
+        .notes-title { width: 100%; border: 2px inset #808080; padding: 6px; font-size: 14px; font-weight: bold; background: #fff; color: #000; font-family: inherit; outline: none; }
+        .notes-editor { width: 100%; flex: 1; margin-top: 10px; padding: 8px; border: 2px inset #808080; resize: none; background: #fff; color: #000; font-family: inherit; font-size: 13px; line-height: 1.6; outline: none; }
+        .notes-info { display: flex; justify-content: space-between; margin-top: 8px; color: #666; font-size: 10px; }
+        .notes-actions { display: flex; gap: 8px; margin-top: 12px; }
+        .notes-button { padding: 6px 12px; border: 2px outset #fff; background: #c0c0c0; color: #000; font-size: 11px; cursor: pointer; }
+        .notes-button:hover { background: #d4d0c8; }
+        .notes-button:active { border: 2px inset #fff; }
+        .notes-save { background: #d4d0c8; border: 2px outset #fff; }
+        .notes-save:hover { background: #e0e0e0; }
+
+        /* TERMINAL APP */
+        .terminal-app { padding: 16px; background: #000; color: #00ff00; font-family: "Courier New", monospace; min-height: 300px; }
+        .terminal-output { min-height: 200px; max-height: 250px; overflow-y: auto; padding: 4px 0; font-size: 12px; line-height: 1.7; white-space: pre-wrap; }
+        .terminal-output::-webkit-scrollbar { width: 5px; }
+        .terminal-output::-webkit-scrollbar-thumb { background: #666; }
+        .terminal-muted { color: #888; }
+        .terminal-command { color: #00ffff; }
+        .terminal-error { color: #ff5555; }
+        .terminal-input-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 8px; border-top: 1px solid #333; }
+        .terminal-prompt { flex-shrink: 0; color: #00ff00; font-size: 12px; }
+        .terminal-input { width: 100%; min-width: 0; border: 0; outline: none; background: transparent; color: #00ffff; font-family: inherit; font-size: 12px; }
+
+        /* MISSION APP */
+        .mission-app { padding: 24px; }
+        .mission-intro { max-width: 390px; margin-bottom: 20px; color: #333; font-size: 12px; line-height: 1.55; }
+        .mission-status { display: flex; align-items: center; gap: 11px; margin-bottom: 18px; padding: 11px 12px; background: #d4d0c8; border: 2px inset #808080; }
+        .mission-status-indicator { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: #00ff00; }
+        .mission-status-title { color: #000; font-size: 11px; font-weight: 600; }
+        .mission-status-text { margin-top: 2px; color: #333; font-size: 9px; }
+        .mission-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .mission-card { min-height: 70px; display: flex; flex-direction: column; justify-content: space-between; padding: 11px; background: #d4d0c8; border: 2px inset #808080; }
+        .mission-card-label { color: #333; font-size: 8px; font-weight: bold; }
+        .mission-card strong { color: #000; font-family: inherit; font-size: 13px; font-weight: 600; }
+        .mission-session { margin-top: 8px; padding: 10px 11px; background: #d4d0c8; border: 2px inset #808080; }
+        .mission-session-row { display: flex; justify-content: space-between; gap: 15px; padding: 4px 0; color: #333; font-size: 10px; }
+        .mission-session-row + .mission-session-row { border-top: 1px solid #808080; }
+        .mission-session-row strong { color: #000; font-weight: 600; }
+        .mission-refresh { width: 100%; margin-top: 12px; padding: 8px 12px; border: 2px outset #fff; background: #c0c0c0; color: #000; font-size: 11px; cursor: pointer; }
+        .mission-refresh:hover { background: #d4d0c8; }
+        .mission-refresh:active { border: 2px inset #fff; }
+
+        /* SETTINGS APP */
+        .settings-app { padding: 24px; }
+        .settings-intro { max-width: 390px; margin-bottom: 20px; color: #333; font-size: 12px; line-height: 1.55; }
+        .settings-section { margin-top: 22px; padding-top: 16px; border-top: 2px inset #808080; }
+        .settings-section-title { margin-bottom: 12px; color: #000080; font-size: 8px; font-weight: bold; }
+        .settings-label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 600; color: #000; }
+        .settings-color { border: 2px inset #808080; padding: 2px; }
+        .settings-input { width: 100%; border: 2px inset #808080; padding: 4px; margin-bottom: 8px; font-family: inherit; color: #000; background: #fff; }
+        .settings-file { margin-bottom: 8px; }
+        .settings-actions { display: flex; gap: 8px; margin-top: 8px; }
+        .settings-button { padding: 6px 12px; border: 2px outset #fff; background: #c0c0c0; color: #000; cursor: pointer; font-size: 11px; }
+        .settings-button:hover { background: #d4d0c8; }
+        .settings-button:active { border: 2px inset #fff; }
+        .settings-button.settings-primary { background: #d4d0c8; }
+        .settings-button.settings-danger { background: #c05050; color: #fff; }
+        .settings-checkbox { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 11px; color: #000; }
+        .settings-select { border: 2px inset #808080; padding: 4px; background: #fff; color: #000; font-family: inherit; }
+        .settings-warning { color: #b04040; font-size: 11px; margin-bottom: 10px; }
+        .settings-status { margin-top: 16px; padding: 6px 10px; background: #d4d0c8; border: 2px inset #808080; font-size: 10px; color: #000; }
+
+        /* =========================================
+           MOBILE ADJUSTMENTS
+        ========================================= */
+        @media (max-width: 700px) {
+            .top-bar { height: 42px; }
+            .system-label { display: none; }
+            .clock { font-size: 10px; }
+            .workspace { top: 42px; }
+            .window { top: 10px; left: 10px; width: calc(100vw - 20px); min-height: 200px; border-radius: 0; }
+            .window-content { padding: 16px; }
+            .window-content h1 { font-size: 30px; }
+            .home-stats { grid-template-columns: 1fr; }
+            .mission-grid { grid-template-columns: 1fr 1fr; }
+            .notes-sidebar { width: 120px; }
+            .dock { overflow-x: auto; justify-content: flex-start; padding: 0 4px; }
+            .dock-item { flex-shrink: 0; }
+            .desktop-icons {
+                display: none; 
+            }
         }
-
-        .buttons button{
-            width:40px;
-            border:0;
-            background:none;
-            color:white;
-            font-size:18px;
-            cursor:pointer;
+        @media (max-width: 420px) {
+            .brand { font-size: 12px; }
+            .window-content { padding: 14px; }
+            .window-content h1 { font-size: 27px; }
+            .home-stats { grid-template-columns: 1fr; }
+            .mission-grid { grid-template-columns: 1fr; }
         }
-
-        .buttons button:hover{
-            background:rgba(255,255,255,.2);
+                       /* =========================================
+           DESKTOP ICONS (VERTICAL)
+        ========================================= */
+        .desktop-icons {
+            position: absolute;
+            top: 50px;
+            left: 15px;
+            display: flex;
+            flex-direction: column; /* Forces vertical stacking */
+            gap: 10px;
+            padding: 4px;
+            z-index: 20;
+            width: 90px; /* Keeps the layout tight */
         }
-
-        .close:hover{
-            background:#d62828 !important;
+        .desktop-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 70px;
+            padding: 8px 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            font-family: "MS Sans Serif", sans-serif;
+            transition: background 0.1s ease, border-color 0.1s ease;
         }
-
-        .content{
-            padding:20px;
+        .desktop-icon:hover {
+            background: rgba(0, 0, 80, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
-
-        .btn{
-            padding:10px 15px;
-            margin-top:10px;
-            border:0;
-            border-radius:4px;
-            background:#457b9d;
-            color:white;
-            cursor:pointer;
+        .icon-tile {
+            display: block;
+            font-size: 34px;
+            line-height: 1.2;
+            margin-bottom: 4px;
         }
-
-        .btn:hover{
-            background:#2f6690;
+        .icon-label {
+            display: block;
+            color: #ffffff;
+            font-size: 11px;
+            text-align: center;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+            line-height: 1.1;
         }
-
-        .box{
-            margin-top:15px;
-            padding:15px;
-            background:#e9ecef;
-            border:1px solid #ced4da;
-            border-radius:5px;
-        }
-
-        /* Notepad */
-
-        textarea{
-            width:100%;
-            height:230px;
-            padding:10px;
-            background:white;
-            color:#222;
-            border:1px solid #adb5bd;
-            border-radius:4px;
-            resize:none;
-            outline:none;
-        }
-
-        /* Music */
-
-        .music{
-            text-align:center;
-        }
-
-        .music h1{
-            font-size:70px;
-        }
-
-        audio{
-            width:90%;
-        }
-
-        /* Bottom bar */
-
-        #taskbar{
-            position:absolute;
-            bottom:0;
-            width:100%;
-            height:60px;
-            padding:10px 20px;
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            background:#212529;
-            border-top:1px solid #495057;
-            z-index:10;
-        }
-
-        #search{
-            width:200px;
-            padding:10px;
-            border-radius:20px;
-            border:1px solid #adb5bd;
-            background:white;
-            color:#222;
-            outline:none;
-        }
-
-        #searchButton{
-            padding:10px 15px;
-            border:0;
-            border-radius:20px;
-            background:#457b9d;
-            color:white;
-            cursor:pointer;
-        }
-
-        #searchButton:hover{
-            background:#2f6690;
-        }
-
-        #quick{
-            display:flex;
-            gap:10px;
-            font-size:22px;
-        }
-
-        .quick{
-            padding:5px;
-            cursor:pointer;
-            border-radius:5px;
-        }
-
-        .quick:hover{
-            background:rgba(255,255,255,.15);
-        }
-
-        #clock{
-            font-size:14px;
-        }
-
-        /* Maximize */
-
-        .max{
-            width:100% !important;
-            height:calc(100vh - 60px) !important;
-            top:0 !important;
-            left:0 !important;
-            border-radius:0;
-        }
-
     </style>
 </head>
-
 <body>
 
-<div id="desktop">
+    <main id="desktop">
 
-    <div id="stars"></div>
-
-    <!-- Left Apps -->
-
-    <div id="apps">
-
-        <div class="app" onclick="openApp('music')">
-            <span>🎵</span>
-            <p>Music</p>
-        </div>
-
-        <div class="app" onclick="openApp('notepad')">
-            <span>📝</span>
-            <p>Notes</p>
-        </div>
-
-        <div class="app" onclick="openApp('files')">
-            <span>📁</span>
-            <p>Files</p>
-        </div>
-
-        <div class="app" onclick="openApp('settings')">
-            <span>⚙️</span>
-            <p>Settings</p>
-        </div>
-
-    </div>
-
-
-    <!-- Music -->
-
-    <div class="window" id="music" style="top:100px;left:280px">
-
-        <div class="titlebar">
-
-            <b>🎵 Music</b>
-
-            <div class="buttons">
-                <button onclick="hideApp('music')">−</button>
-                <button onclick="maxApp('music')">□</button>
-                <button class="close" onclick="closeApp('music')">×</button>
+        <!-- =====================================
+             TOP BAR
+        ====================================== -->
+        <header class="top-bar">
+            <div class="brand">
+                <span class="brand-dot"></span>
+                <span>Orbit OS</span>
             </div>
-
-        </div>
-
-        <div class="content music">
-
-            <h2>Music Player</h2>
-
-            <br>
-
-            <h1>🎧</h1>
-
-            <p>Select music from your computer</p>
-
-            <br>
-
-            <input type="file" id="musicFile" accept="audio/*">
-
-            <br><br>
-
-            <audio id="player" controls></audio>
-
-        </div>
-
-    </div>
-
-
-    <!-- Notepad -->
-
-    <div class="window" id="notepad" style="top:120px;left:350px">
-
-        <div class="titlebar">
-
-            <b>📝 Notepad</b>
-
-            <div class="buttons">
-                <button onclick="hideApp('notepad')">−</button>
-                <button onclick="maxApp('notepad')">□</button>
-                <button class="close" onclick="closeApp('notepad')">×</button>
+            <div class="system-label">your own universe in a universe</div>
+            <div class="clock" id="clock">00:00:00</div>
+        </header>
+                       <!-- =====================================
+             DESKTOP ICONS (VERTICAL)
+        ====================================== -->
+        <div class="desktop-icons" id="desktop-icons">
+            <div class="desktop-icon" onclick="openWindow('home')">
+                <span class="icon-tile">🏠</span>
+                <span class="icon-label">Home</span>
             </div>
-
-        </div>
-
-        <div class="content">
-
-            <h2>My Notes</h2>
-
-            <br>
-
-            <textarea id="note" placeholder="Write here..."></textarea>
-
-            <button class="btn" onclick="saveNote()">
-                Save
-            </button>
-
-        </div>
-
-    </div>
-
-
-    <!-- Files -->
-
-    <div class="window" id="files" style="top:90px;left:420px">
-
-        <div class="titlebar">
-
-            <b>📁 Files</b>
-
-            <div class="buttons">
-                <button onclick="hideApp('files')">−</button>
-                <button onclick="maxApp('files')">□</button>
-                <button class="close" onclick="closeApp('files')">×</button>
+            <div class="desktop-icon" onclick="openWindow('about')">
+                <span class="icon-tile">ℹ️</span>
+                <span class="icon-label">About</span>
             </div>
-
-        </div>
-
-        <div class="content">
-
-            <h2>My Files</h2>
-
-            <br>
-
-            <p>Select files from your computer:</p>
-
-            <br>
-
-            <input type="file" id="fileInput" multiple>
-
-            <div id="fileList"></div>
-
-        </div>
-
-    </div>
-
-
-    <!-- Settings -->
-
-    <div class="window" id="settings" style="top:140px;left:300px">
-
-        <div class="titlebar">
-
-            <b>⚙️ Settings</b>
-
-            <div class="buttons">
-                <button onclick="hideApp('settings')">−</button>
-                <button onclick="maxApp('settings')">□</button>
-                <button class="close" onclick="closeApp('settings')">×</button>
+            <div class="desktop-icon" onclick="openWindow('notes')">
+                <span class="icon-tile">📝</span>
+                <span class="icon-label">Notes</span>
             </div>
-
-        </div>
-
-        <div class="content">
-
-            <h2>Settings</h2>
-
-            <div class="box">
-
-                <h3>Change Theme</h3>
-
-                <button class="btn" onclick="theme('#1b263b')">
-                    Navy
-                </button>
-
-                <button class="btn" onclick="theme('#264653')">
-                    Ocean
-                </button>
-
-                <button class="btn" onclick="theme('#343a40')">
-                    Dark
-                </button>
-
+            <div class="desktop-icon" onclick="openWindow('terminal')">
+                <span class="icon-tile">⌨️</span>
+                <span class="icon-label">Terminal</span>
             </div>
-
-            <div class="box">
-
-                <h3>Extra Feature</h3>
-
-                <p>You can change the SpaceOS theme.</p>
-
+            <div class="desktop-icon" onclick="openWindow('mission')">
+                <span class="icon-tile">📊</span>
+                <span class="icon-label">Mission</span>
             </div>
-
+            <div class="desktop-icon" onclick="openWindow('settings')">
+                <span class="icon-tile">⚙️</span>
+                <span class="icon-label">Settings</span>
+            </div>
         </div>
 
-    </div>
-
-
-    <!-- Bottom Taskbar -->
-
-    <div id="taskbar">
-
-        <div>
-
-            <input
-                id="search"
-                placeholder="Search apps..."
-                onkeydown="if(event.key=='Enter') searchApp()">
-
-            <button id="searchButton" onclick="searchApp()">
-                🔍
-            </button>
-
-        </div>
-
-        <!-- Quick Icons -->
-
-        <div id="quick">
-
-            <span class="quick" onclick="openApp('music')">🎵</span>
-
-            <span class="quick" onclick="openApp('notepad')">📝</span>
-
-            <span class="quick" onclick="openApp('files')">📁</span>
-
-            <span class="quick" onclick="openApp('settings')">⚙️</span>
-
-        </div>
-
-        <div id="clock"></div>
-
-    </div>
-
-</div>
-
-
-<script>
-
-let z = 10;
-
-
-/* Open */
-
-function openApp(id){
-
-    let app = document.getElementById(id);
-
-    app.style.display = "block";
-
-    app.style.zIndex = z++;
-}
-
-
-/* Close */
-
-function closeApp(id){
-
-    document.getElementById(id).style.display = "none";
-}
-
-
-/* Minimize */
-
-function hideApp(id){
-
-    document.getElementById(id).style.display = "none";
-}
-
-
-/* Maximize */
-
-function maxApp(id){
-
-    document.getElementById(id).classList.toggle("max");
-}
-
-
-/* Music */
-
-musicFile.onchange = function(){
-
-    let file = this.files[0];
-
-    if(file){
-
-        player.src = URL.createObjectURL(file);
-
-    }
-
-};
-
-
-/* Files */
-
-fileInput.onchange = function(){
-
-    fileList.innerHTML = "";
-
-    for(let i=0;i<this.files.length;i++){
-
-        fileList.innerHTML +=
-            "<p>📄 " + this.files[i].name + "</p>";
-
-    }
-
-};
-
-
-/* Save Note */
-
-function saveNote(){
-
-    localStorage.setItem("note",note.value);
-
-    alert("Saved");
-
-}
-
-
-/* Load Note */
-
-let oldNote = localStorage.getItem("note");
-
-if(oldNote){
-
-    note.value = oldNote;
-
-}
-
-
-/* Theme */
-
-function theme(color){
-
-    desktop.style.background = color;
-
-}
-
-
-/* Search */
-
-function searchApp(){
-
-    let s = search.value.toLowerCase();
-
-    if(s.includes("music")){
-
-        openApp("music");
-
-    }
-
-    else if(s.includes("note")){
-
-        openApp("notepad");
-
-    }
-
-    else if(s.includes("file")){
-
-        openApp("files");
-
-    }
-
-    else if(s.includes("setting")){
-
-        openApp("settings");
-
-    }
-
-    else{
-
-        alert("App not found");
-
-    }
-
-}
-
-
-/* Clock */
-
-function time(){
-
-    let now = new Date();
-
-    clock.innerHTML =
-        now.toLocaleDateString() +
-        " " +
-        now.toLocaleTimeString();
-
-}
-
-setInterval(time,1000);
-
-time();
-
-
-/* Drag Windows */
-
-document.querySelectorAll(".window").forEach(function(win){
-
-    let bar = win.querySelector(".titlebar");
-
-    let move = false;
-
-    let x,y;
-
-
-    bar.onmousedown = function(e){
-
-        if(e.target.tagName == "BUTTON") return;
-
-        if(win.classList.contains("max")) return;
-
-        move = true;
-
-        x = e.clientX - win.offsetLeft;
-
-        y = e.clientY - win.offsetTop;
-
-        win.style.zIndex = z++;
-
-    };
-
-
-    document.onmousemove = function(e){
-
-        if(move){
-
-            win.style.left = e.clientX - x + "px";
-
-            win.style.top = e.clientY - y + "px";
-
+        <!-- =====================================
+             WORKSPACE
+        ====================================== -->
+        <section class="workspace" id="workspace">
+
+            <!-- =================================
+                 HOME
+            ================================== -->
+            <section class="window" id="home-window" data-app="home" style="left: 70px; top: 70px;">
+                <div class="window-header">
+                    <div class="window-title">
+                        <span class="window-dot"></span>
+                        retro://home
+                    </div>
+                    <button class="window-close" type="button" aria-label="Close Home">×</button>
+                </div>
+                <div class="window-content home-app">
+                    <p class="eyebrow">RETROOS / HOME</p>
+                    <h1 id="home-greeting">Your little universe.</h1>
+                    <p class="welcome-text" id="home-date">Welcome to RetroOS.</p>
+                    <div class="home-stats">
+                        <div class="home-stat"><span class="home-stat-label">SYSTEM</span><strong>ONLINE</strong></div>
+                        <div class="home-stat"><span class="home-stat-label">APPS</span><strong id="home-app-count">6</strong></div>
+                        <div class="home-stat"><span class="home-stat-label">VERSION</span><strong>WEBOS 1</strong></div>
+                    </div>
+                    <div class="home-launch">
+                        <p class="home-launch-label">QUICK ACCESS</p>
+                        <div class="home-launch-buttons">
+                            <button type="button" class="home-launch-button" data-launch="about">About</button>
+                            <button type="button" class="home-launch-button" data-launch="notes">Notes</button>
+                            <button type="button" class="home-launch-button" data-launch="terminal">Terminal</button>
+                            <button type="button" class="home-launch-button" data-launch="mission">Mission</button>
+                            <button type="button" class="home-launch-button" data-launch="settings">Settings</button>
+                        </div>
+                    </div>
+                    <div class="status"><span class="status-dot"></span>RetroOS is ready</div>
+                </div>
+            </section>
+
+            <!-- =================================
+                 ABOUT
+            ================================== -->
+            <section class="window hidden" id="about-window" data-app="about" style="left: 150px; top: 110px;">
+                <div class="window-header">
+                    <div class="window-title"><span class="window-dot"></span>retro://about</div>
+                    <button class="window-close" type="button">×</button>
+                </div>
+                <div class="window-content about-app">
+                    <p class="eyebrow">RETROOS / ABOUT</p>
+                    <h2>RetroOS</h2>
+                    <p class="about-description">A small browser-based operating system built with a human-created, nostalgic Win95 vibe.</p>
+                    <div class="about-section">
+                        <p class="about-section-title">BUILT WITH</p>
+                        <div class="tech-list"><span>HTML</span><span>CSS</span><span>JavaScript</span><span>LocalStorage</span><span>Browser APIs</span></div>
+                    </div>
+                    <div class="about-section">
+                        <p class="about-section-title">WEBOS 1</p>
+                        <p class="about-text">RetroOS is a personal browser-based operating system. The project focuses on creating a simple, customizable desktop experience that runs directly inside the browser.</p>
+                    </div>
+                    <div class="about-footer"><span>RetroOS</span><span>WebOS 1</span></div>
+                </div>
+            </section>
+
+            <!-- =================================
+                 NOTES
+            ================================== -->
+            <section class="window hidden" id="notes-window" data-app="notes" style="left: 220px; top: 150px;">
+                <div class="window-header">
+                    <div class="window-title"><span class="window-dot"></span>retro://notes</div>
+                    <button class="window-close" type="button">×</button>
+                </div>
+                <div class="window-content notes-app">
+                    <p class="eyebrow" style="padding: 12px 12px 0; margin:0;">RETROOS / NOTES</p>
+                    <div class="notes-layout">
+                        <aside class="notes-sidebar">
+                            <div class="notes-sidebar-header"><span>MY NOTES</span><button id="notes-new" type="button" class="notes-new-button">+</button></div>
+                            <div id="notes-list" class="notes-list"></div>
+                        </aside>
+                        <section class="notes-editor-area">
+                            <div id="notes-empty" class="notes-empty"><p>Select a note</p><span>Or create a new one.</span></div>
+                            <div id="notes-editor-container" class="notes-editor-container hidden">
+                                <input id="notes-title" class="notes-title" type="text" placeholder="Note title" autocomplete="off">
+                                <textarea id="notes-editor" class="notes-editor" placeholder="Write something..." spellcheck="true"></textarea>
+                                <div class="notes-info"><span id="notes-count">0 characters</span><span id="notes-status">Saved locally</span></div>
+                                <div class="notes-actions">
+                                    <button id="notes-save" type="button" class="notes-button notes-save">Save</button>
+                                    <button id="notes-delete" type="button" class="notes-button notes-delete">Delete</button>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </section>
+
+            <!-- =================================
+                 TERMINAL
+            ================================== -->
+            <section class="window hidden" id="terminal-window" data-app="terminal" style="left: 290px; top: 100px;">
+                <div class="window-header">
+                    <div class="window-title"><span class="window-dot"></span>retro://terminal</div>
+                    <button class="window-close" type="button">×</button>
+                </div>
+                <div class="window-content terminal-app">
+                    <div class="terminal-output" id="terminal-output">
+                        <div>RetroOS Terminal<br>Type "help" to see available commands.</div>
+                    </div>
+                    <form class="terminal-input-row" id="terminal-form">
+                        <span class="terminal-prompt">retro@desktop:~$</span>
+                        <input id="terminal-input" class="terminal-input" type="text" autocomplete="off" spellcheck="false">
+                    </form>
+                </div>
+            </section>
+
+            <!-- =================================
+                 MISSION CONTROL
+            ================================== -->
+            <section class="window hidden" id="mission-window" data-app="mission" style="left: 350px; top: 160px;">
+                <div class="window-header">
+                    <div class="window-title"><span class="window-dot"></span>retro://mission-control</div>
+                    <button class="window-close" type="button">×</button>
+                </div>
+                <div class="window-content mission-app">
+                    <p class="eyebrow">RETROOS / MISSION CONTROL</p>
+                    <h2>Mission Control</h2>
+                    <p class="mission-intro">A small look at what is happening inside this RetroOS session.</p>
+                    <div class="mission-status">
+                        <div class="mission-status-indicator"></div>
+                        <div><div class="mission-status-title">System online</div><div class="mission-status-text">RetroOS is running normally.</div></div>
+                    </div>
+                    <div class="mission-grid">
+                        <div class="mission-card"><span class="mission-card-label">VERSION</span><strong>WebOS 1</strong></div>
+                        <div class="mission-card"><span class="mission-card-label">APPS</span><strong id="mission-app-count">6</strong></div>
+                        <div class="mission-card"><span class="mission-card-label">OPEN WINDOWS</span><strong id="mission-window-count">1</strong></div>
+                        <div class="mission-card"><span class="mission-card-label">ACTIVE WINDOW</span><strong id="mission-active-window">Home</strong></div>
+                    </div>
+                    <div class="mission-session">
+                        <div class="mission-session-row"><span>Session time</span><strong id="mission-time">00:00:00</strong></div>
+                        <div class="mission-session-row"><span>Desktop</span><strong>Ready</strong></div>
+                    </div>
+                    <button type="button" id="mission-refresh" class="mission-refresh">Refresh status</button>
+                </div>
+            </section>
+
+            <!-- =================================
+                 SETTINGS
+            ================================== -->
+            <section class="window hidden" id="settings-window" data-app="settings" style="left: 410px; top: 120px;">
+                <div class="window-header">
+                    <div class="window-title"><span class="window-dot"></span>retro://settings</div>
+                    <button class="window-close" type="button">×</button>
+                </div>
+                <div class="window-content settings-app">
+                    <p class="eyebrow">RETROOS / SETTINGS</p>
+                    <h2>Customize</h2>
+                    <p class="settings-intro">Make this little desktop yours.</p>
+                    
+                    <div class="settings-section">
+                        <p class="settings-section-title">BACKGROUND</p>
+                        <label class="settings-label" for="background-color">Desktop color</label>
+                        <input id="background-color" type="color" value="#008080" class="settings-color">
+                        <label class="settings-label" for="background-url">Image URL</label>
+                        <input id="background-url" type="url" class="settings-input" placeholder="https://example.com/image.jpg">
+                        <label class="settings-label" for="background-file">Use an image from this device</label>
+                        <input id="background-file" type="file" accept="image/*" class="settings-file">
+                        <div class="settings-actions">
+                            <button type="button" id="background-apply" class="settings-button settings-primary">Apply background</button>
+                            <button type="button" id="background-reset" class="settings-button">Reset</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <p class="settings-section-title">DESKTOP</p>
+                        <label class="settings-checkbox"><input type="checkbox" id="desktop-grid-toggle" checked><span>Show desktop grid</span></label>
+                        <label class="settings-checkbox"><input type="checkbox" id="clock-toggle" checked><span>Show clock</span></label>
+                    </div>
+
+                    <div class="settings-section">
+                        <p class="settings-section-title">WORKSPACE</p>
+                        <div class="settings-actions">
+                            <button type="button" id="workspace-save" class="settings-button settings-primary">Save workspace</button>
+                            <button type="button" id="workspace-restore" class="settings-button">Restore workspace</button>
+                        </div>
+                        <button type="button" id="workspace-reset" class="settings-button settings-danger">Reset window positions</button>
+                    </div>
+
+                    <div class="settings-section">
+                        <p class="settings-section-title">CLOCK</p>
+                        <label class="settings-label" for="clock-format">Time format</label>
+                        <select id="clock-format" class="settings-select"><option value="24">24 hour</option><option value="12">12 hour</option></select>
+                    </div>
+
+                    <div class="settings-section">
+                        <p class="settings-section-title">RESET</p>
+                        <p class="settings-warning">Resetting RetroOS removes saved workspace settings from this browser.</p>
+                        <button type="button" id="orbitos-reset" class="settings-button settings-danger">Reset RetroOS</button>
+                    </div>
+
+                    <div class="settings-status" id="settings-status">Settings ready.</div>
+                </div>
+            </section>
+        </section>
+
+        <!-- =====================================
+             TASKBAR (Replaces OrbitOS Dock)
+        ====================================== -->
+        <nav class="dock" id="dock" aria-label="Application dock">
+            <button id="start-btn" onclick="alert('Start menu not available! Click an app instead.')">🪟 Start</button>
+            
+            <button class="dock-item active" type="button" data-app="home" aria-label="Home"><span class="dock-label">Home</span></button>
+            <button class="dock-item" type="button" data-app="about" aria-label="About"><span class="dock-label">About</span></button>
+            <button class="dock-item" type="button" data-app="notes" aria-label="Notes"><span class="dock-label">Notes</span></button>
+            <button class="dock-item" type="button" data-app="terminal" aria-label="Terminal"><span class="dock-label">Terminal</span></button>
+            <button class="dock-item" type="button" data-app="mission" aria-label="Mission"><span class="dock-label">Mission</span></button>
+            <button class="dock-item" type="button" data-app="settings" aria-label="Settings"><span class="dock-label">Settings</span></button>
+            
+            <div class="tray">
+                <span>🔊</span>
+                <span>🖥️</span>
+                <div class="clock-tray" id="tray-clock">00:00:00</div>
+            </div>
+        </nav>
+
+    </main>
+
+    <script>
+        /* =========================================
+           ORBITOS COMPLETE JAVASCRIPT (PRESERVED)
+        ========================================= */
+        const workspace = document.getElementById("workspace");
+        const clock = document.getElementById("clock");
+        const trayClock = document.getElementById("tray-clock");
+        const desktop = document.getElementById("desktop");
+
+        const windows = document.querySelectorAll(".window");
+        const dockItems = document.querySelectorAll(".dock-item");
+
+        let highestZIndex = 10;
+
+        /* =================================
+           CLOCK
+        ================================= */
+        function updateClock() {
+            if (!clock) return;
+            const now = new Date();
+            const use12Hour = typeof orbitSettings !== "undefined" && orbitSettings.clockFormat === "12";
+            const timeString = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: use12Hour });
+            clock.textContent = timeString;
+            if(trayClock) trayClock.textContent = timeString;
         }
 
-    };
+        /* =================================
+           WINDOW HELPERS
+        ================================= */
+        function getWindow(appName) {
+            return document.querySelector(`.window[data-app="${appName}"]`);
+        }
 
+        function bringToFront(windowElement) {
+            highestZIndex++;
+            windowElement.style.zIndex = highestZIndex;
+            windows.forEach((item) => item.classList.remove("active"));
+            windowElement.classList.add("active");
+            if (typeof updateMissionControl === "function") {
+                setTimeout(updateMissionControl, 0);
+            }
+        }
 
-    document.onmouseup = function(){
+        function openWindow(appName) {
+            const windowElement = getWindow(appName);
+            if (!windowElement) return;
+            windowElement.classList.remove("hidden");
+            bringToFront(windowElement);
+            updateDock();
+        }
 
-        move = false;
+        function closeWindow(windowElement) {
+            windowElement.classList.add("hidden");
+            windowElement.classList.remove("active");
+            updateDock();
+        }
 
-    };
+        /* =================================
+           DOCK
+        ================================= */
+        function updateDock() {
+            dockItems.forEach((dockItem) => {
+                const appName = dockItem.dataset.app;
+                const windowElement = getWindow(appName);
+                if (!windowElement) return;
+                if (windowElement.classList.contains("hidden")) {
+                    dockItem.classList.remove("active");
+                } else {
+                    dockItem.classList.add("active");
+                }
+            });
+        }
 
-});
+        dockItems.forEach((dockItem) => {
+            dockItem.addEventListener("click", () => {
+                const appName = dockItem.dataset.app;
+                const windowElement = getWindow(appName);
+                if (!windowElement) return;
+                if (windowElement.classList.contains("hidden")) {
+                    openWindow(appName);
+                } else {
+                    bringToFront(windowElement);
+                }
+            });
+        });
 
-</script>
+        /* =================================
+           CLOSE BUTTONS
+        ================================= */
+        windows.forEach((windowElement) => {
+            const closeButton = windowElement.querySelector(".window-close");
+            if (!closeButton) return;
+            closeButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                closeWindow(windowElement);
+            });
+        });
 
+        /* =================================
+           WINDOW FOCUS
+        ================================= */
+        windows.forEach((windowElement) => {
+            windowElement.addEventListener("pointerdown", () => {
+                bringToFront(windowElement);
+            });
+        });
+
+        /* =================================
+           WINDOW DRAGGING
+        ================================= */
+        windows.forEach((windowElement) => {
+            const header = windowElement.querySelector(".window-header");
+            if (!header) return;
+            let dragging = false;
+            let startPointerX = 0, startPointerY = 0;
+            let startWindowX = 0, startWindowY = 0;
+            header.addEventListener("pointerdown", (event) => {
+                if (event.target.closest(".window-close")) return;
+                dragging = true;
+                bringToFront(windowElement);
+                startPointerX = event.clientX;
+                startPointerY = event.clientY;
+                startWindowX = windowElement.offsetLeft;
+                startWindowY = windowElement.offsetTop;
+                header.setPointerCapture(event.pointerId);
+            });
+            header.addEventListener("pointermove", (event) => {
+                if (!dragging) return;
+                const workspaceRect = workspace.getBoundingClientRect();
+                const deltaX = event.clientX - startPointerX;
+                const deltaY = event.clientY - startPointerY;
+                let newX = startWindowX + deltaX;
+                let newY = startWindowY + deltaY;
+                const visiblePart = 40;
+                const minimumX = -windowElement.offsetWidth + visiblePart;
+                const maximumX = workspaceRect.width - visiblePart;
+                const maximumY = workspaceRect.height - 40;
+                newX = Math.max(minimumX, Math.min(newX, maximumX));
+                newY = Math.max(0, Math.min(newY, maximumY));
+                windowElement.style.left = `${newX}px`;
+                windowElement.style.top = `${newY}px`;
+            });
+            header.addEventListener("pointerup", (event) => {
+                dragging = false;
+                if (header.hasPointerCapture(event.pointerId)) {
+                    header.releasePointerCapture(event.pointerId);
+                }
+            });
+            header.addEventListener("pointercancel", () => { dragging = false; });
+        });
+
+        /* =================================
+           NOTES APP (COMPLETE)
+        ================================= */
+        const NOTES_STORAGE_KEY = "orbitos-notes-v2";
+        let notes = [];
+        let activeNoteId = null;
+
+        const notesList = document.getElementById("notes-list");
+        const notesNew = document.getElementById("notes-new");
+        const notesTitle = document.getElementById("notes-title");
+        const notesEditor = document.getElementById("notes-editor");
+        const notesSave = document.getElementById("notes-save");
+        const notesDelete = document.getElementById("notes-delete");
+        const notesCount = document.getElementById("notes-count");
+        const notesStatus = document.getElementById("notes-status");
+        const notesEmpty = document.getElementById("notes-empty");
+        const notesEditorContainer = document.getElementById("notes-editor-container");
+
+        function createNoteId() { return Date.now().toString() + Math.random().toString(36).substring(2, 8); }
+        function saveNotesToStorage() { localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes)); }
+
+        function loadNotes() {
+            const saved = localStorage.getItem(NOTES_STORAGE_KEY);
+            if (!saved) { notes = []; renderNotesList(); return; }
+            try { notes = JSON.parse(saved); } catch { notes = []; }
+            renderNotesList();
+        }
+
+        function createNote() {
+            const newNote = { id: createNoteId(), title: "Untitled note", content: "", createdAt: Date.now(), updatedAt: Date.now() };
+            notes.unshift(newNote);
+            saveNotesToStorage();
+            renderNotesList();
+            selectNote(newNote.id);
+        }
+
+        function renderNotesList() {
+            if (!notesList) return;
+            notesList.innerHTML = "";
+            if (notes.length === 0) {
+                const empty = document.createElement("div");
+                empty.className = "notes-list-empty";
+                empty.textContent = "No notes yet.";
+                notesList.appendChild(empty);
+                return;
+            }
+            notes.forEach((note) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "note-list-item";
+                if (note.id === activeNoteId) button.classList.add("active");
+                const title = document.createElement("strong");
+                title.textContent = note.title || "Untitled note";
+                button.appendChild(title);
+                button.addEventListener("click", () => { selectNote(note.id); });
+                notesList.appendChild(button);
+            });
+        }
+
+        function selectNote(noteId) {
+            const note = notes.find((item) => item.id === noteId);
+            if (!note) return;
+            activeNoteId = noteId;
+            notesEmpty.classList.add("hidden");
+            notesEditorContainer.classList.remove("hidden");
+            notesTitle.value = note.title;
+            notesEditor.value = note.content;
+            updateNotesCount();
+            notesStatus.textContent = "Saved locally";
+            renderNotesList();
+            notesEditor.focus();
+        }
+
+        function updateNotesCount() {
+            if (!notesEditor) return;
+            const count = notesEditor.value.length;
+            notesCount.textContent = `${count} ${count === 1 ? "character" : "characters"}`;
+        }
+
+        function updateCurrentNote() {
+            if (!activeNoteId) return;
+            const note = notes.find((item) => item.id === activeNoteId);
+            if (!note) return;
+            note.title = notesTitle.value.trim() || "Untitled note";
+            note.content = notesEditor.value;
+            note.updatedAt = Date.now();
+            notesStatus.textContent = "Unsaved";
+            renderNotesList();
+        }
+
+        function saveCurrentNote() {
+            if (!activeNoteId) return;
+            const note = notes.find((item) => item.id === activeNoteId);
+            if (!note) return;
+            note.title = notesTitle.value.trim() || "Untitled note";
+            note.content = notesEditor.value;
+            note.updatedAt = Date.now();
+            saveNotesToStorage();
+            renderNotesList();
+            notesStatus.textContent = "Saved locally";
+        }
+
+        function deleteCurrentNote() {
+            if (!activeNoteId) return;
+            notes = notes.filter((note) => note.id !== activeNoteId);
+            activeNoteId = null;
+            saveNotesToStorage();
+            renderNotesList();
+            notesEditorContainer.classList.add("hidden");
+            notesEmpty.classList.remove("hidden");
+        }
+
+        if (notesNew) notesNew.addEventListener("click", createNote);
+        if (notesSave) notesSave.addEventListener("click", saveCurrentNote);
+        if (notesDelete) notesDelete.addEventListener("click", deleteCurrentNote);
+        if (notesEditor) notesEditor.addEventListener("input", () => { updateNotesCount(); updateCurrentNote(); });
+        if (notesTitle) notesTitle.addEventListener("input", updateCurrentNote);
+        loadNotes();
+
+        /* =================================
+           TERMINAL APP (COMPLETE)
+        ================================= */
+        const terminalForm = document.getElementById("terminal-form");
+        const terminalInput = document.getElementById("terminal-input");
+        const terminalOutput = document.getElementById("terminal-output");
+
+        const terminalCommands = {
+            help: () => { return ["Available commands:", "", "help     Show available commands", "clear    Clear the terminal", "about    About RetroOS", "date     Show current date and time", "apps     Show installed applications", "echo     Print text"]; },
+            about: () => { return ["RetroOS", "A small browser-based operating system.", "Built with HTML, CSS and JavaScript."]; },
+            date: () => { return [new Date().toString()]; },
+            apps: () => { return ["Installed applications:", "", "- Home", "- About", "- Notes", "- Terminal", "- Mission Control"]; }
+        };
+
+        function addTerminalLine(text, className = "") {
+            const line = document.createElement("div");
+            line.textContent = text;
+            if (className) line.className = className;
+            terminalOutput.appendChild(line);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function runTerminalCommand(command) {
+            const trimmed = command.trim();
+            if (!trimmed) return;
+            addTerminalLine(`retro@desktop:~$ ${trimmed}`, "terminal-command");
+            const parts = trimmed.split(" ");
+            const commandName = parts[0].toLowerCase();
+            const argumentsText = parts.slice(1).join(" ");
+            if (commandName === "clear") { terminalOutput.innerHTML = ""; return; }
+            if (commandName === "echo") { addTerminalLine(argumentsText); return; }
+            if (Object.prototype.hasOwnProperty.call(terminalCommands, commandName)) {
+                const result = terminalCommands[commandName]();
+                result.forEach((line) => { addTerminalLine(line); });
+                return;
+            }
+            addTerminalLine(`command not found: ${commandName}`, "terminal-error");
+            addTerminalLine("Type 'help' to see available commands.", "terminal-muted");
+        }
+
+        if (terminalForm) {
+            terminalForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                const command = terminalInput.value;
+                runTerminalCommand(command);
+                terminalInput.value = "";
+            });
+        }
+        const terminalWindow = document.getElementById("terminal-window");
+        if (terminalWindow) {
+            terminalWindow.addEventListener("pointerdown", () => {
+                setTimeout(() => {
+                    if (!terminalWindow.classList.contains("hidden")) terminalInput.focus();
+                }, 0);
+            });
+        }
+
+        /* =================================
+           INITIAL STATE
+        ================================= */
+        updateDock();
+        const homeWindow = getWindow("home");
+        if (homeWindow) bringToFront(homeWindow);
+        console.log("Initial state: homeWindow=", !!homeWindow);
+
+        /* =================================
+           MISSION CONTROL (COMPLETE)
+        ================================= */
+        const missionWindowCount = document.getElementById("mission-window-count");
+        const missionAppCount = document.getElementById("mission-app-count");
+        const missionActiveWindow = document.getElementById("mission-active-window");
+        const missionTime = document.getElementById("mission-time");
+        const missionRefresh = document.getElementById("mission-refresh");
+
+        const orbitApplications = ["home", "about", "notes", "terminal", "mission", "settings"];
+
+        function getApplicationName(appName) {
+            const names = { home: "Home", about: "About", notes: "Notes", terminal: "Terminal", mission: "Mission Control" };
+            return names[appName] || appName;
+        }
+
+        function getOpenWindowCount() {
+            let count = 0;
+            windows.forEach((windowElement) => {
+                if (!windowElement.classList.contains("hidden")) count++;
+            });
+            return count;
+        }
+
+        function getActiveWindow() {
+            let activeWindow = null;
+            let highest = -1;
+            windows.forEach((windowElement) => {
+                if (windowElement.classList.contains("hidden")) return;
+                const zIndex = parseInt(window.getComputedStyle(windowElement).zIndex) || 0;
+                if (zIndex > highest) { highest = zIndex; activeWindow = windowElement; }
+            });
+            return activeWindow;
+        }
+
+        function updateMissionControl() {
+            if (!missionWindowCount) return;
+            const installedApps = orbitApplications.filter((appName) => getWindow(appName));
+            missionAppCount.textContent = installedApps.length;
+            missionWindowCount.textContent = getOpenWindowCount();
+            const activeWindow = getActiveWindow();
+            missionActiveWindow.textContent = activeWindow ? getApplicationName(activeWindow.dataset.app) : "None";
+            missionTime.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        }
+
+        if (missionRefresh) missionRefresh.addEventListener("click", updateMissionControl);
+        setInterval(updateMissionControl, 1000);
+        if (workspace) workspace.addEventListener("pointerdown", () => { setTimeout(updateMissionControl, 0); });
+        updateMissionControl();
+
+        /* =================================
+           HOME APP (COMPLETE)
+        ================================= */
+        const homeGreeting = document.getElementById("home-greeting");
+        const homeDate = document.getElementById("home-date");
+        const homeAppCount = document.getElementById("home-app-count");
+
+        function getHomeGreeting() {
+            const hour = new Date().getHours();
+            if (hour < 5) return "Still awake?<br>Welcome back.";
+            if (hour < 12) return "Good morning.<br>Your little universe.";
+            if (hour < 18) return "Good afternoon.<br>Your little universe.";
+            if (hour < 23) return "Good evening.<br>Your little universe.";
+            return "Late night?<br>Your little universe.";
+        }
+
+        function updateHome() {
+            if (homeGreeting) homeGreeting.innerHTML = getHomeGreeting();
+            if (homeDate) homeDate.textContent = new Date().toLocaleDateString([], { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+            if (homeAppCount) homeAppCount.textContent = document.querySelectorAll(".dock-item").length;
+        }
+        updateHome();
+        setInterval(updateHome, 60000);
+
+        const homeLaunchButtons = document.querySelectorAll(".home-launch-button");
+        homeLaunchButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                const appName = button.dataset.launch;
+                const targetWindow = getWindow(appName);
+                if (!targetWindow) return;
+                targetWindow.classList.remove("hidden");
+                bringToFront(targetWindow);
+                updateDock();
+            });
+        });
+
+        /* =================================
+           SETTINGS + WORKSPACE (COMPLETE)
+        ================================= */
+        const ORBITOS_SETTINGS_KEY = "orbitos-settings-v1";
+       const defaultOrbitSettings = { backgroundColor: "#008080", backgroundImage: "https://wallpapercave.com/wp/wp11483770.png", gridVisible: true, clockVisible: true, clockFormat: "24" };
+        let orbitSettings = { ...defaultOrbitSettings };
+
+        const backgroundColor = document.getElementById("background-color");
+        const backgroundUrl = document.getElementById("background-url");
+        const backgroundFile = document.getElementById("background-file");
+        const backgroundApply = document.getElementById("background-apply");
+        const backgroundReset = document.getElementById("background-reset");
+        const desktopGridToggle = document.getElementById("desktop-grid-toggle");
+        const clockToggle = document.getElementById("clock-toggle");
+        const workspaceSave = document.getElementById("workspace-save");
+        const workspaceRestore = document.getElementById("workspace-restore");
+        const workspaceReset = document.getElementById("workspace-reset");
+        const clockFormat = document.getElementById("clock-format");
+        const orbitosReset = document.getElementById("orbitos-reset");
+        const settingsStatus = document.getElementById("settings-status");
+
+        function loadOrbitSettings() {
+            const saved = localStorage.getItem(ORBITOS_SETTINGS_KEY);
+            if (!saved) { orbitSettings = { ...defaultOrbitSettings }; return; }
+            try { orbitSettings = { ...defaultOrbitSettings, ...JSON.parse(saved) }; } catch { orbitSettings = { ...defaultOrbitSettings }; }
+        }
+
+        function saveOrbitSettings() { localStorage.setItem(ORBITOS_SETTINGS_KEY, JSON.stringify(orbitSettings)); }
+        function showSettingsStatus(message) { if (settingsStatus) settingsStatus.textContent = message; }
+
+        function applyOrbitBackground() {
+            if (!desktop) return;
+            desktop.style.backgroundColor = orbitSettings.backgroundColor;
+            if (orbitSettings.backgroundImage) {
+                desktop.style.backgroundImage = `url("${orbitSettings.backgroundImage}")`;
+                desktop.style.backgroundSize = "cover"; desktop.style.backgroundPosition = "center"; desktop.style.backgroundRepeat = "no-repeat";
+            } else {
+                desktop.style.backgroundImage = "";
+            }
+        }
+
+        function applyOrbitGrid() { if (!desktop) return; desktop.classList.toggle("grid-hidden", !orbitSettings.gridVisible); }
+        function applyOrbitClock() { if (!clock) return; clock.style.display = orbitSettings.clockVisible ? "" : "none"; }
+
+        function applyOrbitSettings() {
+            applyOrbitBackground(); applyOrbitGrid(); applyOrbitClock();
+            if (backgroundColor) backgroundColor.value = orbitSettings.backgroundColor;
+            if (backgroundUrl) backgroundUrl.value = orbitSettings.backgroundImage || "";
+            if (desktopGridToggle) desktopGridToggle.checked = orbitSettings.gridVisible;
+            if (clockToggle) clockToggle.checked = orbitSettings.clockVisible;
+            if (clockFormat) clockFormat.value = orbitSettings.clockFormat;
+        }
+
+        if (backgroundColor) {
+            backgroundColor.addEventListener("input", () => {
+                orbitSettings.backgroundColor = backgroundColor.value;
+                orbitSettings.backgroundImage = "";
+                applyOrbitBackground(); saveOrbitSettings();
+            });
+        }
+        if (backgroundApply) {
+            backgroundApply.addEventListener("click", () => {
+                const url = backgroundUrl.value.trim();
+                orbitSettings.backgroundImage = url || "";
+                orbitSettings.backgroundColor = backgroundColor.value;
+                applyOrbitBackground(); saveOrbitSettings(); showSettingsStatus("Background saved.");
+            });
+        }
+        if (backgroundFile) {
+            backgroundFile.addEventListener("change", () => {
+                const file = backgroundFile.files[0];
+                if (!file || !file.type.startsWith("image/")) { showSettingsStatus("Please select an image."); return; }
+                const reader = new FileReader();
+                reader.onload = () => {
+                    orbitSettings.backgroundImage = reader.result;
+                    applyOrbitBackground(); saveOrbitSettings(); showSettingsStatus("Image background saved.");
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        if (backgroundReset) {
+            backgroundReset.addEventListener("click", () => {
+                orbitSettings.backgroundColor = defaultOrbitSettings.backgroundColor;
+                orbitSettings.backgroundImage = "";
+                applyOrbitBackground(); saveOrbitSettings(); applyOrbitSettings(); showSettingsStatus("Background reset.");
+            });
+        }
+        if (desktopGridToggle) {
+            desktopGridToggle.addEventListener("change", () => { orbitSettings.gridVisible = desktopGridToggle.checked; applyOrbitGrid(); saveOrbitSettings(); });
+        }
+        if (clockToggle) {
+            clockToggle.addEventListener("change", () => { orbitSettings.clockVisible = clockToggle.checked; applyOrbitClock(); saveOrbitSettings(); });
+        }
+        if (clockFormat) {
+            clockFormat.addEventListener("change", () => { orbitSettings.clockFormat = clockFormat.value; saveOrbitSettings(); updateClock(); });
+        }
+
+        const ORBITOS_WORKSPACE_KEY = "orbitos-workspace-v1";
+        function getWorkspaceState() {
+            const windowState = {};
+            windows.forEach((windowElement) => {
+                const appName = windowElement.dataset.app;
+                windowState[appName] = {
+                    left: windowElement.offsetLeft, top: windowElement.offsetTop,
+                    width: windowElement.offsetWidth, height: windowElement.offsetHeight,
+                    hidden: windowElement.classList.contains("hidden")
+                };
+            });
+            return { windows: windowState };
+        }
+
+        if (workspaceSave) {
+            workspaceSave.addEventListener("click", () => {
+                localStorage.setItem(ORBITOS_WORKSPACE_KEY, JSON.stringify(getWorkspaceState()));
+                showSettingsStatus("Workspace saved.");
+            });
+        }
+
+        function restoreWorkspace() {
+            const saved = localStorage.getItem(ORBITOS_WORKSPACE_KEY);
+            if (!saved) return;
+            try {
+                const state = JSON.parse(saved);
+                if (!state.windows) return;
+                windows.forEach((windowElement) => {
+                    const appName = windowElement.dataset.app;
+                    const savedWindow = state.windows[appName];
+                    if (!savedWindow) return;
+                    windowElement.style.left = `${savedWindow.left}px`;
+                    windowElement.style.top = `${savedWindow.top}px`;
+                    if (savedWindow.width) windowElement.style.width = `${savedWindow.width}px`;
+                    if (savedWindow.height) windowElement.style.height = `${savedWindow.height}px`;
+                    windowElement.classList.toggle("hidden", savedWindow.hidden);
+                });
+                updateDock();
+            } catch { console.log("Could not restore workspace."); }
+        }
+
+        if (workspaceRestore) {
+            workspaceRestore.addEventListener("click", () => { restoreWorkspace(); showSettingsStatus("Workspace restored."); });
+        }
+
+        if (workspaceReset) {
+            workspaceReset.addEventListener("click", () => {
+                const defaultPositions = { home: { left: 70, top: 70 }, about: { left: 150, top: 110 }, notes: { left: 220, top: 150 }, terminal: { left: 290, top: 100 }, mission: { left: 350, top: 160 }, settings: { left: 410, top: 120 } };
+                windows.forEach((windowElement) => {
+                    const position = defaultPositions[windowElement.dataset.app];
+                    if (!position) return;
+                    windowElement.style.left = `${position.left}px`;
+                    windowElement.style.top = `${position.top}px`;
+                });
+                showSettingsStatus("Window positions reset.");
+            });
+        }
+
+        if (orbitosReset) {
+            orbitosReset.addEventListener("click", () => {
+                if (!confirm("Reset RetroOS and remove saved settings?")) return;
+                localStorage.removeItem(ORBITOS_SETTINGS_KEY);
+                localStorage.removeItem(ORBITOS_WORKSPACE_KEY);
+                orbitSettings = { ...defaultOrbitSettings };
+                applyOrbitSettings();
+                location.reload();
+            });
+        }
+
+        /* =================================
+           INITIALIZE SETTINGS & WORKSPACE
+        ================================= */
+        loadOrbitSettings();
+        applyOrbitSettings();
+        restoreWorkspace();
+        console.log("RetroOS settings loaded and workspace restored", orbitSettings);
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
 </body>
 </html>
